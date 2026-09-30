@@ -1,6 +1,7 @@
-/* gov.ca tools: URL allowlist, personal-information guard, and the two
+/* gov.ca tools: URL allowlist, personal-information guard, the two
  * agentic tools (live Canada.ca search + page reading) with curated-index
- * fallbacks. Pure functions, no DOM. Shared between the browser (script tag)
+ * fallbacks, and the Responses API plumbing (tool loop + streamed final
+ * answer). Pure functions, no DOM. Shared between the browser (script tag)
  * and the node test harness (module.exports). */
 (function (root) {
   'use strict';
@@ -216,55 +217,179 @@
     return { answer: answer, followups: followups };
   }
 
+  /* Responses API function tools: flat {type,name,description,parameters}
+   * format (no nested "function" wrapper like Chat Completions used). */
   var TOOL_DEFS = [
     {
       type: 'function',
-      function: {
-        name: 'search_canada_ca',
-        description: 'Search official Government of Canada pages for a query. Returns title/url/summary triples.',
-        parameters: {
-          type: 'object',
-          properties: {
-            query: { type: 'string', description: 'Short search query, e.g. "passport renewal"' },
-            lang: { type: 'string', enum: ['en', 'fr'], description: 'Result language' }
-          },
-          required: ['query']
-        }
+      name: 'search_canada_ca',
+      description: 'Search official Government of Canada pages for a query. Returns title/url/summary triples.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Short search query, e.g. "passport renewal"' },
+          lang: { type: 'string', enum: ['en', 'fr'], description: 'Result language' }
+        },
+        required: ['query']
       }
     },
     {
       type: 'function',
-      function: {
-        name: 'read_canada_ca_page',
-        description: 'Read the text of one official Government of Canada page URL.',
-        parameters: {
-          type: 'object',
-          properties: {
-            url: { type: 'string', description: 'The https URL of the page to read' }
-          },
-          required: ['url']
-        }
+      name: 'read_canada_ca_page',
+      description: 'Read the text of one official Government of Canada page URL.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: 'The https URL of the page to read' }
+        },
+        required: ['url']
       }
     }
   ];
 
-  // ctx: { chat(messages, tools)->Promise<{toolCalls:[{id,name,args}]}>,
+  /* ---------------- Responses API plumbing ---------------- */
+  var RESPONSES_URL = 'https://api.openai.com/v1/responses';
+
+  function buildResponsesBody(modelConfig, instructions, input, tools, stream) {
+    var body = {
+      model: modelConfig.model,
+      instructions: instructions,
+      input: input,
+      stream: !!stream
+    };
+    if (modelConfig.effort) body.reasoning = { effort: modelConfig.effort };
+    if (tools) body.tools = tools;
+    return body;
+  }
+
+  function postResponses(fetchImpl, apiKey, body, signal) {
+    var opts = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify(body)
+    };
+    if (signal) opts.signal = signal;
+    return fetchImpl(RESPONSES_URL, opts).then(function (resp) {
+      if (!resp.ok) throw { http: resp.status };
+      return resp.json();
+    });
+  }
+
+  /* Split a Responses API response into display text + tool calls.
+   * 'reasoning' items are never rendered; they ride along verbatim in
+   * later inputs so the model keeps its context. */
+  function parseResponseOutput(data) {
+    var items = (data && data.output) || [];
+    var text = '';
+    var calls = [];
+    items.forEach(function (it) {
+      if (!it || !it.type) return;
+      if (it.type === 'message') {
+        (it.content || []).forEach(function (c) {
+          if (c && c.type === 'output_text' && typeof c.text === 'string') text += c.text;
+        });
+      } else if (it.type === 'function_call') {
+        calls.push({ call_id: it.call_id, name: it.name, arguments: it.arguments || '{}' });
+      }
+    });
+    return { text: text, functionCalls: calls, outputItems: items };
+  }
+
+  /* Incremental SSE parser for the Responses stream. Accumulates
+   * response.output_text.delta deltas; ignores everything else. */
+  function createSSEAccumulator() {
+    var buf = '';
+    var acc = '';
+    function handleLine(line, onDelta) {
+      line = line.trim();
+      if (line.indexOf('data:') !== 0) return;
+      var data = line.slice(5).trim();
+      if (!data || data === '[DONE]') return;
+      var obj;
+      try { obj = JSON.parse(data); } catch (e) { return; }
+      if (obj && obj.type === 'response.output_text.delta' && typeof obj.delta === 'string' && obj.delta) {
+        acc += obj.delta;
+        if (onDelta) onDelta(acc);
+      }
+    }
+    return {
+      text: function () { return acc; },
+      feed: function (chunk, onDelta) {
+        buf += String(chunk);
+        var parts = buf.split('\n');
+        buf = parts.pop();
+        parts.forEach(function (line) { handleLine(line, onDelta); });
+      },
+      flush: function (onDelta) {
+        if (buf) { handleLine(buf, onDelta); buf = ''; }
+      }
+    };
+  }
+
+  /* Final answer over the Responses API with SSE streaming.
+   * opts: { fetchImpl, apiKey, modelConfig, instructions, signal,
+   *         shouldStop(), onDelta(fullText) }
+   * Falls back to one non-streamed request if streaming fails. */
+  function streamFinalAnswer(input, opts) {
+    var streamBody = buildResponsesBody(opts.modelConfig, opts.instructions, input, null, true);
+    function nonStreamed() {
+      var b = buildResponsesBody(opts.modelConfig, opts.instructions, input, null, false);
+      return postResponses(opts.fetchImpl, opts.apiKey, b, opts.signal).then(function (d) {
+        var p = parseResponseOutput(d);
+        if (opts.onDelta) opts.onDelta(p.text);
+        return p.text;
+      });
+    }
+    return opts.fetchImpl(RESPONSES_URL, {
+      method: 'POST',
+      signal: opts.signal,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + opts.apiKey },
+      body: JSON.stringify(streamBody)
+    }).then(function (resp) {
+      if (!resp.ok) throw { http: resp.status };
+      var acc = createSSEAccumulator();
+      var reader = resp.body.getReader();
+      var decoder = new TextDecoder();
+      function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) { acc.flush(); return acc.text(); }
+          if (opts.shouldStop && opts.shouldStop()) {
+            try { reader.cancel(); } catch (e) { /* ignore */ }
+            acc.flush();
+            return acc.text();
+          }
+          acc.feed(decoder.decode(r.value, { stream: true }), opts.onDelta);
+          return pump();
+        });
+      }
+      return pump();
+    }).catch(function (err) {
+      var aborting = (err && err.name === 'AbortError') || (opts.shouldStop && opts.shouldStop());
+      if (aborting) throw err;
+      return nonStreamed();
+    });
+  }
+
+  // ctx: { fetchImpl, apiKey, modelConfig:{model, effort|null},
   //        search(query, lang)->Promise<{results:[{title,url}], live}>,
   //        read(url)->Promise<{ok, text, title, fallback}>,
-  //        onStatus(kind, data), onRound(roundInfo), maxRounds, history }
-  // Resolves { messages, readPages:[{title,url}] } ready for the final streamed answer.
-  function runAgentLoop(question, lang, ctx) {
+  //        onStatus(kind, data), onRound(roundInfo), history, maxRounds,
+  //        signal, shouldStop() }
+  // Resolves { input, readPages } where input is the accumulated Responses
+  // API input array, ready for the final streamed answer.
+  function runToolLoop(question, lang, ctx) {
     var maxRounds = ctx.maxRounds || 4;
-    var messages = [{ role: 'system', content: buildAgentSystemPrompt(lang) }]
-      .concat((ctx && ctx.history) || [])
-      .concat([{ role: 'user', content: question }]);
+    var instructions = buildAgentSystemPrompt(lang);
+    var input = ((ctx && ctx.history) || []).map(function (m) {
+      return { role: m.role, content: m.content };
+    }).concat([{ role: 'user', content: question }]);
     var readPages = [];
     var seenUrls = {};
     if (ctx.onStatus) ctx.onStatus('working', {});
 
     function execToolCall(tc) {
       var args = {};
-      try { args = JSON.parse(tc.args || '{}'); } catch (e) { args = {}; }
+      try { args = JSON.parse(tc.arguments || '{}'); } catch (e) { args = {}; }
       if (tc.name === 'search_canada_ca') {
         var q = String(args.query || question).slice(0, 200);
         if (ctx.onStatus) ctx.onStatus('searching', { query: q });
@@ -296,24 +421,25 @@
 
     var round = 0;
     function step() {
-      if (round >= maxRounds) return Promise.resolve({ messages: messages, readPages: readPages });
+      if ((ctx.shouldStop && ctx.shouldStop()) || round >= maxRounds) {
+        return Promise.resolve({ input: input, readPages: readPages });
+      }
       round++;
-      return ctx.chat(messages, TOOL_DEFS).then(function (resp) {
-        var calls = (resp && resp.toolCalls) || [];
-        if (!calls.length) return { messages: messages, readPages: readPages };
-        messages.push({
-          role: 'assistant', content: null,
-          tool_calls: calls.map(function (tc) {
-            return { id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.args } };
-          })
-        });
+      var body = buildResponsesBody(ctx.modelConfig, instructions, input, TOOL_DEFS, false);
+      return postResponses(ctx.fetchImpl, ctx.apiKey, body, ctx.signal).then(function (d) {
+        var parsed = parseResponseOutput(d);
+        var calls = parsed.functionCalls;
+        if (!calls.length) return { input: input, readPages: readPages };
+        /* Re-send the model's output items verbatim (reasoning included,
+         * never rendered) so the next request keeps full context. */
+        input = input.concat(parsed.outputItems);
         var chain = Promise.resolve();
         var infos = [];
-        calls.forEach(function (tc) {
+        calls.forEach(function (fc) {
           chain = chain.then(function () {
-            return execToolCall(tc).then(function (out) {
+            return execToolCall(fc).then(function (out) {
               infos.push(out.info);
-              messages.push({ role: 'tool', tool_call_id: tc.id, content: out.json });
+              input.push({ type: 'function_call_output', call_id: fc.call_id, output: out.json });
             });
           });
         });
@@ -337,14 +463,19 @@
     splitFollowups: splitFollowups,
     FU_MARKER: FU_MARKER,
     TOOL_DEFS: TOOL_DEFS,
-    runAgentLoop: runAgentLoop,
+    runToolLoop: runToolLoop,
+    streamFinalAnswer: streamFinalAnswer,
     SEARCH_TIMEOUT_MS: SEARCH_TIMEOUT_MS,
     READ_TIMEOUT_MS: READ_TIMEOUT_MS,
+    RESPONSES_URL: RESPONSES_URL,
     // test-only helpers
     _extractLinks: extractLinks,
     _hasChallengeMarker: hasChallengeMarker,
     _stripToText: stripToText,
-    _curatedTriples: curatedTriples
+    _curatedTriples: curatedTriples,
+    _buildResponsesBody: buildResponsesBody,
+    _parseResponseOutput: parseResponseOutput,
+    _createSSEAccumulator: createSSEAccumulator
   };
 
   if (typeof module !== 'undefined' && module.exports) {

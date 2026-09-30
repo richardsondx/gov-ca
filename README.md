@@ -18,14 +18,14 @@ This repo starts from the actual gov.ca Concept design (the hero, the maple-leaf
 
 There is no server. Everything runs in the browser:
 
-- **Bring your own key.** The first visit to `#/chat` opens an onboarding modal. Paste an OpenAI API key; it is validated against `/v1/models` and stored only in this browser's localStorage. A visible key status lets you reopen settings and remove the key at any time. Use a key created just for this prototype, with a spending limit.
-- **Agentic tool loop.** The assistant uses OpenAI function calling with two tools, `search_canada_ca(query, lang)` and `read_canada_ca_page(url)`, for up to 4 tool rounds, then streams the final answer.
+- **Bring your own key.** The first visit to `#/chat` opens an onboarding modal. Paste an OpenAI API key; it is validated against `/v1/models` and stored only in this browser's localStorage. A discreet key icon in the chat header clears the saved key and history at any time. Use a key created just for this prototype, with a spending limit.
+- **Agentic tool loop.** The assistant uses the OpenAI Responses API with two tools, `search_canada_ca(query, lang)` and `read_canada_ca_page(url)`, for up to 4 tool rounds, then streams the final answer.
 - **Strict URL allowlist.** Only `canada.ca` and `gc.ca` hosts over HTTPS are ever fetched or cited. Anything else is rejected before any network call.
 - **Personal-information guard.** A pattern-based guard blocks SIN-like numbers, phone numbers, email addresses, and health-card-like numbers before anything is sent to OpenAI. It is pattern-based, not perfect: never enter personal information.
 - **Live retrieval with honest fallback.** Live Canada.ca search is attempted first with short timeouts. When it is blocked (for example by a bot challenge), the assistant falls back to a hand-curated index of 76 official pages (`data/sources.json`). The How-AI-works modal discloses this.
 - **Citation honesty.** The system prompt requires citing only pages actually read, and requires the verbatim line "I cannot verify this with the pages I have read." when the sources do not support a claim. AI answers can be wrong: verify on Canada.ca.
 
-Also included: EN/FR toggle (synced with the Concept's own toggle), model picker (`gpt-4o-mini` default, `gpt-4o` option, plus a custom model-name field), `.txt`/`.md` attachments, voice dictation via Web Speech, session history with New chat, and Privacy and How-AI-works modals.
+Also included: EN/FR toggle (synced with the Concept's own toggle), GPT-6 Luna at Low reasoning effort as the single model (shown in the chat header and under each answer; `#/chat?model=` overrides it for testing), `.txt`/`.md` attachments, voice dictation via Web Speech, session history with New chat, and Privacy and How-AI-works modals.
 
 ## Files
 

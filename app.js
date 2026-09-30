@@ -8,9 +8,10 @@
 
   /* The single model this prototype uses. No model picker UI is shown;
    * Richardson can override it for his own testing with ?model=name in the URL. */
-  const GOVCA_MODEL = 'gpt-4o-mini';
+  const GOVCA_MODEL = 'gpt-6-luna';
+  const GOVCA_EFFORT = 'low';
 
-  var OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+  var RESPONSES_URL = 'https://api.openai.com/v1/responses';
   var MODELS_URL = 'https://api.openai.com/v1/models';
   var LS_KEY = 'govca_key';
   var LS_FB = 'govca_fb_';
@@ -179,6 +180,17 @@
     } catch (e) { return ''; }
   }
   function effectiveModel() { return queryModelOverride() || GOVCA_MODEL; }
+  /* Luna-family models run at Low reasoning effort; anything else omits the
+   * reasoning param entirely (e.g. a ?model=gpt-4o override). */
+  function effectiveModelConfig() {
+    var m = effectiveModel();
+    return { model: m, effort: m.toLowerCase().indexOf('luna') !== -1 ? GOVCA_EFFORT : null };
+  }
+  function modelDisplayName(cfg) {
+    var base = cfg.model === 'gpt-6-luna' ? 'GPT-6 Luna' : cfg.model;
+    if (!cfg.effort) return base;
+    return base + ' \u00b7 ' + cfg.effort.charAt(0).toUpperCase() + cfg.effort.slice(1);
+  }
 
   /* ---------------- tiny dom helpers ---------------- */
   function $(id) { return document.getElementById(id); }
@@ -282,6 +294,8 @@
     back.setAttribute('data-gci18n', 'back');
     var title = el('h1', 'gc-thread-title', t('thread_title'));
     title.setAttribute('data-gci18n', 'thread_title');
+    var mlabel = el('div', 'gc-model-label', modelDisplayName(effectiveModelConfig()));
+    mlabel.id = 'gc-model-label';
     var actions = el('div', 'gc-head-actions');
     var newChat = el('button', 'gc-btn', t('new_chat'));
     newChat.type = 'button';
@@ -308,6 +322,7 @@
     actions.appendChild(langBtn);
     head.appendChild(back);
     head.appendChild(title);
+    head.appendChild(mlabel);
     head.appendChild(actions);
 
     var hist = el('details', 'gc-history');
@@ -886,29 +901,7 @@
     }
   }
 
-  /* ---------------- OpenAI plumbing ---------------- */
-  function chatOnce(messages, tools) {
-    var ctrl = new AbortController();
-    state.abortCtrl = ctrl;
-    return fetch(OPENAI_URL, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getKey() },
-      body: JSON.stringify({ model: effectiveModel(), messages: messages, tools: tools, tool_choice: 'auto' })
-    }).then(function (resp) {
-      if (!resp.ok) throw { http: resp.status };
-      return resp.json();
-    }).then(function (d) {
-      var msg = d.choices && d.choices[0] && d.choices[0].message;
-      var tcs = (msg && msg.tool_calls) || [];
-      return {
-        toolCalls: tcs.map(function (tc, i) {
-          return { id: tc.id || ('call_' + Date.now() + '_' + i), name: tc.function.name, args: tc.function.arguments || '{}' };
-        })
-      };
-    });
-  }
-
+  /* ---------------- OpenAI plumbing (Responses API) ---------------- */
   function mapApiError(err) {
     if (err && err.http === 401) return t('err_key');
     if (err && err.http === 429) return t('err_rate');
@@ -920,8 +913,16 @@
     setBusy(true);
     state.stopRequested = false;
     setStatus(block, 'working');
+    var ctrl = new AbortController();
+    state.abortCtrl = ctrl;
+    var cfg = effectiveModelConfig();
 
     var deps = {
+      fetchImpl: window.fetch.bind(window),
+      apiKey: getKey(),
+      modelConfig: cfg,
+      signal: ctrl.signal,
+      shouldStop: function () { return state.stopRequested; },
       search: function (q, lang) {
         return GovCaTools.searchCanadaCa(q, {
           fetchImpl: window.fetch.bind(window),
@@ -935,7 +936,6 @@
           curatedRecord: function (u) { return recordForUrl(u); }
         });
       },
-      chat: chatOnce,
       onStatus: function (kind) {
         if (kind === 'searching') setStatus(block, 'searching');
         else if (kind === 'reading') setStatus(block, 'reading');
@@ -945,10 +945,10 @@
       maxRounds: MAX_ROUNDS
     };
 
-    GovCaTools.runAgentLoop(fullQuestion, state.lang, deps).then(function (out) {
+    GovCaTools.runToolLoop(fullQuestion, state.lang, deps).then(function (out) {
       block.readPages = out.readPages || [];
       if (state.stopRequested) { finishStopped(block, true); return; }
-      return streamAnswer(block, out.messages);
+      return streamAnswer(block, out.input, cfg, ctrl);
     }).catch(function (err) {
       if (state.stopRequested || (err && err.name === 'AbortError')) { finishStopped(block, true); return; }
       stopStatus(block);
@@ -959,54 +959,31 @@
     });
   }
 
-  function streamAnswer(block, messages) {
+  function streamAnswer(block, input, cfg, ctrl) {
     setStatus(block, 'writing');
-    var ctrl = new AbortController();
-    state.abortCtrl = ctrl;
     var acc = '';
     var firstToken = false;
-    return fetch(OPENAI_URL, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getKey() },
-      body: JSON.stringify({ model: effectiveModel(), messages: messages, stream: true })
-    }).then(function (resp) {
-      if (!resp.ok) throw { http: resp.status };
-      var reader = resp.body.getReader();
-      var decoder = new TextDecoder();
-      var buf = '';
-      function pump() {
-        return reader.read().then(function (r) {
-          if (r.done) return acc;
-          if (state.stopRequested) { try { reader.cancel(); } catch (e) {} return acc; }
-          buf += decoder.decode(r.value, { stream: true });
-          var parts = buf.split('\n');
-          buf = parts.pop();
-          parts.forEach(function (line) {
-            line = line.trim();
-            if (line.indexOf('data:') !== 0) return;
-            var data = line.slice(5).trim();
-            if (!data || data === '[DONE]') return;
-            try {
-              var j = JSON.parse(data);
-              var c = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
-              if (c) {
-                acc += c;
-                if (!firstToken) {
-                  firstToken = true;
-                  fadeStatus(block);
-                  block.card.hidden = false;
-                  block.body.classList.add('gc-stream-cursor');
-                }
-                block.body.innerHTML = renderMarkdown(acc);
-                block.qa.scrollIntoView({ behavior: 'smooth', block: 'end' });
-              }
-            } catch (e) { /* partial chunk, ignore */ }
-          });
-          return pump();
-        });
+    function render(text) {
+      acc = text;
+      if (!firstToken && text) {
+        firstToken = true;
+        fadeStatus(block);
+        block.card.hidden = false;
+        block.body.classList.add('gc-stream-cursor');
       }
-      return pump();
+      if (text) {
+        block.body.innerHTML = renderMarkdown(text);
+        block.qa.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+    return GovCaTools.streamFinalAnswer(input, {
+      fetchImpl: window.fetch.bind(window),
+      apiKey: getKey(),
+      modelConfig: cfg,
+      instructions: GovCaTools.buildAgentSystemPrompt(state.lang),
+      signal: ctrl.signal,
+      shouldStop: function () { return state.stopRequested; },
+      onDelta: render
     }).then(function (finalText) {
       block.answerText = finalText;
       finishBlock(block, state.stopRequested);
@@ -1041,6 +1018,7 @@
     if (block.readPages.length) buildSources(block);
     if (split.followups.length) buildFollowups(block, split.followups);
     buildControls(block);
+    block.card.appendChild(el('div', 'gc-model-cap', effectiveModel()));
     if (stopped) {
       var note = el('div', 'gc-stopped-note', t('stopped_note'));
       block.qa.appendChild(note);

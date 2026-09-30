@@ -52,6 +52,21 @@ body.gc-chat-mode { overflow: hidden; }
   flex: 1 1 auto;
 }
 .gc-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Visible model readout: display only, no picker. */
+.gc-model-label {
+  font-size: 11px;
+  color: var(--ink-soft);
+  opacity: .75;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.gc-model-cap {
+  font-size: 11px;
+  color: var(--ink-soft);
+  opacity: .75;
+  margin-top: 10px;
+}
 .gc-btn {
   border: 1px solid var(--line);
   background: var(--paper-pure);
