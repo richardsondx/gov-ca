@@ -2,6 +2,8 @@
 
 An unofficial prototype: a conversational front door for Canadian government services, built directly on the **gov.ca Concept** design. Not affiliated with the Government of Canada.
 
+**Live prototype:** https://richardsondx.github.io/gov-ca
+
 ![gov.ca Concept hero: "Hello, Canada" with the chat pill](assets/screenshot.png)
 
 ## What it is
@@ -25,7 +27,7 @@ There is no server. Everything runs in the browser:
 - **Live retrieval with honest fallback.** Live Canada.ca search is attempted first with short timeouts. When it is blocked (for example by a bot challenge), the assistant falls back to a hand-curated index of 76 official pages (`data/sources.json`). The How-AI-works modal discloses this.
 - **Citation honesty.** The system prompt requires citing only pages actually read, and requires the verbatim line "I cannot verify this with the pages I have read." when the sources do not support a claim. AI answers can be wrong: verify on Canada.ca.
 
-Also included: EN/FR toggle (synced with the Concept's own toggle), GPT-6 Luna at Low reasoning effort as the single model (shown in the chat header and under each answer; `#/chat?model=` overrides it for testing), `.txt`/`.md` attachments, voice dictation via Web Speech, session history with New chat, and Privacy and How-AI-works modals.
+Also included: EN/FR toggle (synced with the Concept's own toggle), GPT-6 Luna at Low reasoning effort as the single model (`#/chat?model=` overrides it for testing), `.txt`/`.md` attachments, voice dictation via Web Speech, session history with New chat, and Privacy and How-AI-works modals.
 
 ## Files
 
