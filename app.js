@@ -180,6 +180,15 @@
     } catch (e) { return ''; }
   }
   function effectiveModel() { return queryModelOverride() || GOVCA_MODEL; }
+  function queryQParam() {
+    try {
+      // deep-link intake: #/chat?q=<urlencoded> auto-sends as the first message.
+      // Coexists with ?model=: e.g. #/chat?model=gpt-4o&q=hello
+      var h = location.hash || '';
+      var m = /[?&]q=([^&#]*)/.exec(h);
+      return m ? decodeURIComponent(m[1]).trim() : '';
+    } catch (e) { return ''; }
+  }
   /* Luna-family models run at Low reasoning effort; anything else omits the
    * reasoning param entirely (e.g. a ?model=gpt-4o override). */
   function effectiveModelConfig() {
@@ -448,6 +457,12 @@
         openKeyModal();
       }
       window.scrollTo(0, 0);
+      // deep-linked question (?q=): auto-send once per unique hash
+      var dq = queryQParam();
+      if (dq && state._consumedQ !== location.hash) {
+        state._consumedQ = location.hash;
+        setTimeout(function () { submitQuestion(dq); }, 60);
+      }
     }
   }
   window.addEventListener('hashchange', renderRoute);
@@ -1106,6 +1121,49 @@
     return 'h' + Math.abs(h);
   }
 
+  /* ---------------- landing ask bar: pinned chat input on the concept page --- */
+  function buildAskBar() {
+    if ($('govca-askbar')) return;
+    var bar = el('div');
+    bar.id = 'govca-askbar';
+    var inner = el('div', 'govca-askbar-inner');
+    var form = el('form', 'govca-askbar-form');
+    form.setAttribute('action', '#');
+    var input = el('input');
+    input.type = 'text';
+    input.id = 'govca-askbar-input';
+    input.setAttribute('autocomplete', 'off');
+    input.placeholder = t('ph');
+    input.setAttribute('aria-label', t('ph'));
+    var send = el('button', 'govca-askbar-send', '');
+    send.type = 'submit';
+    send.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    send.setAttribute('aria-label', t('send'));
+    send.title = t('send');
+    form.appendChild(input);
+    form.appendChild(send);
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var q = input.value.trim();
+      if (!q) return;
+      input.value = '';
+      // chat route picks up ?q= and auto-sends it as the first message
+      location.hash = '#/chat?q=' + encodeURIComponent(q);
+    });
+    inner.appendChild(form);
+    bar.appendChild(inner);
+    document.body.appendChild(bar);
+    state._askbarInput = input;
+  }
+  function syncAskBarLang() {
+    if (state._askbarInput) {
+      state._askbarInput.placeholder = t('ph');
+      state._askbarInput.setAttribute('aria-label', t('ph'));
+    }
+    var send = document.querySelector('#govca-askbar .govca-askbar-send');
+    if (send) { send.setAttribute('aria-label', t('send')); send.title = t('send'); }
+  }
+
   /* ---------------- hero integration ---------------- */
   function heroFileText() {
     var fi = $('ask-file');
@@ -1156,9 +1214,10 @@
     state.lang = conceptLang();
     loadSources();
     bindHero();
+    buildAskBar();
     document.querySelectorAll('.lang-toggle').forEach(function (b) {
       b.addEventListener('click', function () {
-        requestAnimationFrame(syncLang);
+        requestAnimationFrame(function () { syncLang(); syncAskBarLang(); });
       });
     });
     // keyboard: escape closes modals

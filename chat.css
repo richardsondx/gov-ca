@@ -459,3 +459,59 @@ body.gc-chat-mode { overflow: hidden; }
   .gc-thread-title { flex-basis: 100%; order: 3; }
   .gc-user span { max-width: 88%; }
 }
+
+/* ---------- landing ask bar: pinned chat input on the concept page ---------- */
+#govca-askbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: none;
+  padding: 10px var(--gutter) calc(12px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line);
+}
+body:not(.gc-chat-mode) #govca-askbar { display: block; }
+/* keep the concept footer visible above the pinned bar */
+body:not(.gc-chat-mode) { padding-bottom: 84px; }
+.govca-askbar-inner { max-width: 720px; margin: 0 auto; }
+.govca-askbar-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper-pure);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 6px 6px 20px;
+  box-shadow: var(--shadow);
+}
+.govca-askbar-form:focus-within { border-color: var(--ink-soft); }
+.govca-askbar-form input[type="text"] {
+  flex: 1 1 auto;
+  border: 0;
+  background: none;
+  font-size: 16px;
+  font-family: var(--sans);
+  color: var(--ink);
+  outline: none;
+  min-width: 0;
+}
+.govca-askbar-send {
+  flex: none;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--red);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.govca-askbar-send:hover { background: var(--red-dark); }
+@media (max-width: 560px) {
+  body:not(.gc-chat-mode) { padding-bottom: 76px; }
+  #govca-askbar { padding-left: 16px; padding-right: 16px; }
+  .govca-askbar-form { padding: 5px 5px 5px 16px; }
+}
