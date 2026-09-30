@@ -186,12 +186,6 @@
     var m = effectiveModel();
     return { model: m, effort: m.toLowerCase().indexOf('luna') !== -1 ? GOVCA_EFFORT : null };
   }
-  function modelDisplayName(cfg) {
-    var base = cfg.model === 'gpt-6-luna' ? 'GPT-6 Luna' : cfg.model;
-    if (!cfg.effort) return base;
-    return base + ' \u00b7 ' + cfg.effort.charAt(0).toUpperCase() + cfg.effort.slice(1);
-  }
-
   /* ---------------- tiny dom helpers ---------------- */
   function $(id) { return document.getElementById(id); }
   function el(tag, cls, text) {
@@ -294,8 +288,6 @@
     back.setAttribute('data-gci18n', 'back');
     var title = el('h1', 'gc-thread-title', t('thread_title'));
     title.setAttribute('data-gci18n', 'thread_title');
-    var mlabel = el('div', 'gc-model-label', modelDisplayName(effectiveModelConfig()));
-    mlabel.id = 'gc-model-label';
     var actions = el('div', 'gc-head-actions');
     var newChat = el('button', 'gc-btn', t('new_chat'));
     newChat.type = 'button';
@@ -322,7 +314,6 @@
     actions.appendChild(langBtn);
     head.appendChild(back);
     head.appendChild(title);
-    head.appendChild(mlabel);
     head.appendChild(actions);
 
     var hist = el('details', 'gc-history');
@@ -1018,7 +1009,6 @@
     if (block.readPages.length) buildSources(block);
     if (split.followups.length) buildFollowups(block, split.followups);
     buildControls(block);
-    block.card.appendChild(el('div', 'gc-model-cap', effectiveModel()));
     if (stopped) {
       var note = el('div', 'gc-stopped-note', t('stopped_note'));
       block.qa.appendChild(note);
