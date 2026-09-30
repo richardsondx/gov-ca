@@ -6,11 +6,13 @@
 (function () {
   'use strict';
 
+  /* The single model this prototype uses. No model picker UI is shown;
+   * Richardson can override it for his own testing with ?model=name in the URL. */
+  const GOVCA_MODEL = 'gpt-4o-mini';
+
   var OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
   var MODELS_URL = 'https://api.openai.com/v1/models';
   var LS_KEY = 'govca_key';
-  var LS_MODEL = 'govca_model';
-  var LS_CUSTOM_MODEL = 'govca_custom_model';
   var LS_FB = 'govca_fb_';
   var MAX_ROUNDS = 4;
   var ATTACH_MAX = 50 * 1024;
@@ -21,11 +23,9 @@
       thread_title: 'Ask gov.ca',
       back: 'Back to concept',
       new_chat: 'New chat',
-      key_missing: 'No API key',
-      key_saved: 'Key saved',
-      model_label: 'Model',
-      empty_h: 'Ask about a Canadian government service.',
-      empty_p: 'Your question opens a thread. The assistant searches Canada.ca, reads the official pages, and streams back a cited answer.',
+      clear_data: 'Clear saved key and history',
+      clear_data_confirm: 'Clear your saved API key, questions, and feedback from this browser?',
+      empty_greet: "I'm here. How can I help with a Canadian government service or official information?",
       examples: ['How do I renew my passport?', 'How do I apply for EI?', 'What is the Canada Child Benefit?'],
       history: 'Recent questions',
       ph: 'Ask about passports, taxes, EI...',
@@ -70,10 +70,7 @@
       modal_save: 'Save key',
       modal_warn_t: 'Security note:',
       modal_warn_d: 'Keys in localStorage are readable by page scripts. Use a key created just for this prototype, with a spending limit set in your OpenAI dashboard.',
-      modal_model: 'Model:',
-      modal_custom: 'Custom model name (optional):',
-      modal_custom_ph: 'e.g. gpt-6-luna',
-      modal_custom_warn: 'Saved, but that model name was not found in your account\u2019s model list. It will still be tried.',
+      modal_key: 'API key:',
       modal_cost: 'Cost transparency: gpt-4o-mini costs roughly $0.001 per answer. You pay OpenAI directly; this site charges nothing.',
       modal_close: 'Close',
       modal_remove: 'Remove key',
@@ -89,11 +86,9 @@
       thread_title: 'Poser une question',
       back: 'Retour au concept',
       new_chat: 'Nouvelle discussion',
-      key_missing: 'Aucune cl\u00e9 API',
-      key_saved: 'Cl\u00e9 enregistr\u00e9e',
-      model_label: 'Mod\u00e8le',
-      empty_h: 'Posez une question sur un service du gouvernement canadien.',
-      empty_p: 'Votre question ouvre un fil. L\u2019assistant cherche sur Canada.ca, lit les pages officielles, puis affiche une r\u00e9ponse avec sources.',
+      clear_data: 'Effacer la cl\u00e9 et l\u2019historique enregistr\u00e9s',
+      clear_data_confirm: 'Effacer votre cl\u00e9 API, vos questions et vos commentaires de ce navigateur ?',
+      empty_greet: 'Je suis l\u00e0. Comment puis-je vous aider avec un service du gouvernement canadien ou de l\u2019information officielle ?',
       examples: ['Comment renouveler mon passeport ?', 'Comment demander l\u2019assurance-emploi ?', 'Qu\u2019est-ce que l\u2019Allocation canadienne pour enfants ?'],
       history: 'Questions r\u00e9centes',
       ph: 'Posez une question sur les passeports, les imp\u00f4ts, l\u2019AE...',
@@ -138,10 +133,7 @@
       modal_save: 'Enregistrer la cl\u00e9',
       modal_warn_t: 'Note de s\u00e9curit\u00e9 :',
       modal_warn_d: 'Les cl\u00e9s dans le localStorage peuvent \u00eatre lues par les scripts de la page. Utilisez une cl\u00e9 cr\u00e9\u00e9e uniquement pour ce prototype, avec une limite de d\u00e9penses dans votre tableau de bord OpenAI.',
-      modal_model: 'Mod\u00e8le :',
-      modal_custom: 'Nom de mod\u00e8le personnalis\u00e9 (facultatif) :',
-      modal_custom_ph: 'p. ex. gpt-6-luna',
-      modal_custom_warn: 'Enregistr\u00e9, mais ce nom de mod\u00e8le ne figure pas dans la liste de vos mod\u00e8les. Il sera quand m\u00eame essay\u00e9.',
+      modal_key: 'Cl\u00e9 API :',
       modal_cost: 'Transparence des co\u00fbts : gpt-4o-mini co\u00fbte environ 0,001 $ par r\u00e9ponse. Vous payez OpenAI directement; ce site ne facture rien.',
       modal_close: 'Fermer',
       modal_remove: 'Supprimer la cl\u00e9',
@@ -158,7 +150,6 @@
   /* ---------------- state ---------------- */
   var state = {
     lang: 'en',
-    model: localStorage.getItem(LS_MODEL) || 'gpt-4o-mini',
     history: [],
     pastQuestions: [],
     attached: null, // {name, text}
@@ -179,8 +170,15 @@
     return s;
   }
   function getKey() { return localStorage.getItem(LS_KEY) || ''; }
-  function getCustomModel() { return (localStorage.getItem(LS_CUSTOM_MODEL) || '').trim(); }
-  function effectiveModel() { return getCustomModel() || state.model; }
+  function queryModelOverride() {
+    try {
+      // the override lives in the hash route, e.g. index.html#/chat?model=gpt-6-luna
+      var h = location.hash || '';
+      var m = /[?&]model=([^&#]+)/.exec(h);
+      return m ? decodeURIComponent(m[1]).trim() : '';
+    } catch (e) { return ''; }
+  }
+  function effectiveModel() { return queryModelOverride() || GOVCA_MODEL; }
 
   /* ---------------- tiny dom helpers ---------------- */
   function $(id) { return document.getElementById(id); }
@@ -274,7 +272,7 @@
   /* ---------------- chat root dom ---------------- */
   var ui = {};
   function buildChat() {
-    var root = el('div');
+    var root = el('div', 'gc-root');
     root.id = 'govca-chat';
     root.setAttribute('aria-label', 'gov.ca chat thread');
 
@@ -285,29 +283,29 @@
     var title = el('h1', 'gc-thread-title', t('thread_title'));
     title.setAttribute('data-gci18n', 'thread_title');
     var actions = el('div', 'gc-head-actions');
-    var keyStatus = el('button', 'gc-key-status', '');
-    keyStatus.type = 'button';
-    keyStatus.id = 'gc-key-status';
-    keyStatus.addEventListener('click', openKeyModal);
-    var modelSel = el('select', 'gc-model-select');
-    modelSel.setAttribute('aria-label', t('model_label'));
-    ['gpt-4o-mini', 'gpt-4o'].forEach(function (m) {
-      var o = document.createElement('option');
-      o.value = m; o.textContent = m;
-      modelSel.appendChild(o);
-    });
-    modelSel.value = state.model;
-    modelSel.addEventListener('change', function () {
-      state.model = modelSel.value;
-      localStorage.setItem(LS_MODEL, state.model);
-    });
     var newChat = el('button', 'gc-btn', t('new_chat'));
     newChat.type = 'button';
     newChat.setAttribute('data-gci18n', 'new_chat');
     newChat.addEventListener('click', newChatFn);
-    actions.appendChild(keyStatus);
-    actions.appendChild(modelSel);
+    var wipe = el('button', 'gc-wipe', '');
+    wipe.type = 'button';
+    wipe.title = t('clear_data');
+    wipe.setAttribute('data-gci18n-title', 'clear_data');
+    wipe.setAttribute('aria-label', t('clear_data'));
+    wipe.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="8" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12.2 12H21M17.5 12v4M21 12v2.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    wipe.addEventListener('click', clearAllData);
+    var langBtn = el('button', 'gc-lang-btn', state.lang === 'en' ? 'FR' : 'EN');
+    langBtn.type = 'button';
+    langBtn.setAttribute('aria-label', state.lang === 'en' ? 'Passer au fran\u00e7ais' : 'Switch to English');
+    langBtn.addEventListener('click', function () {
+      var target = state.lang === 'en' ? 'fr' : 'en';
+      var b = document.querySelector('.lang-toggle[data-lang="' + target + '"]');
+      if (b) b.click(); /* concept setLanguage flips aria-pressed; boot listener syncs the chat */
+      else { state.lang = target; applyChatI18n(); }
+    });
     actions.appendChild(newChat);
+    actions.appendChild(wipe);
+    actions.appendChild(langBtn);
     head.appendChild(back);
     head.appendChild(title);
     head.appendChild(actions);
@@ -323,7 +321,7 @@
     var thread = el('div', 'gc-thread');
     thread.id = 'gc-thread';
 
-    var dockWrap = el('div', 'gc-dock-wrap');
+    var bottom = el('div', 'gc-bottom');
     var dock = el('div', 'gc-dock');
     var composer = el('div', 'gc-composer');
     var attachBtn = el('button', 'gc-tool', '');
@@ -368,8 +366,7 @@
     chipRow.appendChild(chip);
     dock.appendChild(composer);
     dock.appendChild(chipRow);
-    dockWrap.appendChild(hist);
-    dockWrap.appendChild(dock);
+    bottom.appendChild(hist);
     var dockFoot = el('div', 'gc-dock-foot');
     var privLink = el('button', '', t('privacy_link'));
     privLink.type = 'button';
@@ -381,18 +378,18 @@
     howLink.addEventListener('click', function () { openInfoModal('how'); });
     dockFoot.appendChild(privLink);
     dockFoot.appendChild(howLink);
+    bottom.appendChild(dockFoot);
+    bottom.appendChild(dock);
 
     root.appendChild(head);
     root.appendChild(thread);
-    root.appendChild(dockWrap);
-    root.appendChild(dockFoot);
+    root.appendChild(bottom);
     document.body.appendChild(root);
 
     ui = {
       root: root, thread: thread, head: head, hist: hist, histList: histList,
       input: input, send: send, attachBtn: attachBtn, fileInput: fileInput,
-      micBtn: micBtn, chip: chip, chipName: chipName, keyStatus: keyStatus,
-      modelSel: modelSel, empty: null
+      micBtn: micBtn, chip: chip, chipName: chipName, langBtn: langBtn, empty: null
     };
 
     attachBtn.addEventListener('click', function () { fileInput.click(); });
@@ -407,16 +404,13 @@
     buildModals();
     buildToast();
     renderEmpty();
-    updateKeyStatus();
   }
 
   function renderEmpty() {
     if (ui.empty) return;
     var box = el('div', 'gc-empty');
-    var h = el('h2', '', t('empty_h'));
-    h.setAttribute('data-gci18n', 'empty_h');
-    var p = el('p', '', t('empty_p'));
-    p.setAttribute('data-gci18n', 'empty_p');
+    var greet = el('p', 'gc-greet', t('empty_greet'));
+    greet.setAttribute('data-gci18n', 'empty_greet');
     var ex = el('div', 'gc-examples');
     I18N[state.lang].examples.forEach(function (q) {
       var b = el('button', 'gc-example', q);
@@ -424,8 +418,7 @@
       b.addEventListener('click', function () { submitQuestion(q); });
       ex.appendChild(b);
     });
-    box.appendChild(h);
-    box.appendChild(p);
+    box.appendChild(greet);
     box.appendChild(ex);
     ui.thread.appendChild(box);
     ui.empty = box;
@@ -484,7 +477,10 @@
     ui.send.setAttribute('aria-label', state.busy ? t('stop') : t('send'));
     ui.attachBtn.title = t('attach_title');
     ui.micBtn.title = t('mic_title');
-    updateKeyStatus();
+    if (ui.langBtn) {
+      ui.langBtn.textContent = state.lang === 'en' ? 'FR' : 'EN';
+      ui.langBtn.setAttribute('aria-label', state.lang === 'en' ? 'Passer au fran\u00e7ais' : 'Switch to English');
+    }
     if (ui.empty) { ui.empty.remove(); ui.empty = null; renderEmpty(); }
     if (ui.keyModal && ui.keyModal.classList.contains('show')) renderKeyModal();
     if (ui.infoModal && ui.infoModal.classList.contains('show') && ui.infoKind) renderInfoModal(ui.infoKind);
@@ -548,7 +544,7 @@
     var li3 = el('li', '', t('modal_s3'));
     ol.appendChild(li1); ol.appendChild(li2); ol.appendChild(li3);
     var f1 = el('div', 'gc-field');
-    var lab1 = el('label', '', t('modal_model'));
+    var lab1 = el('label', '', t('modal_key'));
     lab1.htmlFor = 'gc-key-input';
     var keyInput = el('input');
     keyInput.type = 'password';
@@ -557,16 +553,6 @@
     keyInput.placeholder = 'sk-...';
     keyInput.value = getKey();
     f1.appendChild(lab1); f1.appendChild(keyInput);
-    var f2 = el('div', 'gc-field');
-    var lab2 = el('label', '', t('modal_custom'));
-    lab2.htmlFor = 'gc-custom-model';
-    var cmInput = el('input');
-    cmInput.type = 'text';
-    cmInput.id = 'gc-custom-model';
-    cmInput.placeholder = t('modal_custom_ph');
-    cmInput.value = getCustomModel();
-    cmInput.autocomplete = 'off';
-    f2.appendChild(lab2); f2.appendChild(cmInput);
     var result = el('div', 'gc-key-result');
     var row = el('div', 'gc-modal-row');
     var save = el('button', 'gc-btn gc-primary', t('modal_save'));
@@ -580,7 +566,7 @@
     warn.innerHTML = '<strong>' + escapeHtml(t('modal_warn_t')) + '</strong> ' + escapeHtml(t('modal_warn_d'));
     var cost = el('p', 'gc-cost', t('modal_cost'));
     card.appendChild(h); card.appendChild(intro); card.appendChild(ol);
-    card.appendChild(f1); card.appendChild(f2); card.appendChild(result);
+    card.appendChild(f1); card.appendChild(result);
     card.appendChild(row); card.appendChild(warn); card.appendChild(cost);
 
     function say(msg, ok) {
@@ -589,30 +575,18 @@
     }
     save.addEventListener('click', function () {
       var k = keyInput.value.trim();
-      var cm = cmInput.value.trim();
       if (!k) { say(t('key_bad'), false); return; }
       save.disabled = true;
-      validateKey(k, function (ok, models) {
+      validateKey(k, function (ok) {
         save.disabled = false;
         if (!ok) { say(t('key_bad'), false); return; }
         localStorage.setItem(LS_KEY, k);
-        if (cm) {
-          localStorage.setItem(LS_CUSTOM_MODEL, cm);
-          if (models.indexOf(cm) === -1) say(t('modal_custom_warn'), false);
-          else say(t('key_ok'), true);
-        } else {
-          localStorage.removeItem(LS_CUSTOM_MODEL);
-          say(t('key_ok'), true);
-        }
-        updateKeyStatus();
+        say(t('key_ok'), true);
       });
     });
     remove.addEventListener('click', function () {
       localStorage.removeItem(LS_KEY);
-      localStorage.removeItem(LS_CUSTOM_MODEL);
       keyInput.value = '';
-      cmInput.value = '';
-      updateKeyStatus();
       say(t('key_removed'), true);
     });
     close.addEventListener('click', closeKeyModal);
@@ -641,12 +615,6 @@
     xhr.onerror = function () { cb(false, []); };
     xhr.ontimeout = function () { cb(false, []); };
     xhr.send();
-  }
-  function updateKeyStatus() {
-    if (!ui.keyStatus) return;
-    var has = !!getKey();
-    ui.keyStatus.textContent = has ? t('key_saved') : t('key_missing');
-    ui.keyStatus.classList.toggle('has-key', has);
   }
 
   /* ---------------- info modals ---------------- */
@@ -736,6 +704,20 @@
     if (!v) return;
     ui.input.value = '';
     submitQuestion(v);
+  }
+
+  /* Wipe everything this prototype stores, then return to onboarding. */
+  function clearAllData() {
+    if (!window.confirm(t('clear_data_confirm'))) return;
+    try {
+      var toRemove = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf('govca_') === 0) toRemove.push(k);
+      }
+      toRemove.forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) { /* storage unavailable */ }
+    location.reload();
   }
 
   /* ---------------- history ---------------- */
@@ -1055,9 +1037,6 @@
     var split = GovCaTools.splitFollowups(block.answerText || '');
     block.answerText = split.answer;
     block.body.innerHTML = renderMarkdown(split.answer);
-
-    var tag = el('div', 'gc-model-tag', effectiveModel());
-    block.card.appendChild(tag);
 
     if (block.readPages.length) buildSources(block);
     if (split.followups.length) buildFollowups(block, split.followups);
