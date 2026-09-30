@@ -473,8 +473,23 @@ body.gc-chat-mode { overflow: hidden; }
   border-top: 1px solid var(--line);
 }
 body:not(.gc-chat-mode) #govca-askbar { display: block; }
-/* keep the concept footer visible above the pinned bar */
-body:not(.gc-chat-mode) { padding-bottom: 84px; }
+/* parked below the viewport until the hero search scrolls out of view */
+body:not(.gc-chat-mode) #govca-askbar {
+  transform: translateY(110%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform .3s ease, opacity .3s ease, visibility 0s linear .3s;
+}
+body:not(.gc-chat-mode) #govca-askbar.govca-askbar-visible {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform .3s ease, opacity .3s ease;
+}
+/* keep the concept footer visible above the pinned bar, only while it is shown */
+body.govca-askbar-on:not(.gc-chat-mode) { padding-bottom: 84px; }
 .govca-askbar-inner { max-width: 720px; margin: 0 auto; }
 .govca-askbar-form {
   display: flex;
@@ -511,7 +526,7 @@ body:not(.gc-chat-mode) { padding-bottom: 84px; }
 }
 .govca-askbar-send:hover { background: var(--red-dark); }
 @media (max-width: 560px) {
-  body:not(.gc-chat-mode) { padding-bottom: 76px; }
+  body.govca-askbar-on:not(.gc-chat-mode) { padding-bottom: 76px; }
   #govca-askbar { padding-left: 16px; padding-right: 16px; }
   .govca-askbar-form { padding: 5px 5px 5px 16px; }
 }

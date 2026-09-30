@@ -1152,8 +1152,36 @@
     });
     inner.appendChild(form);
     bar.appendChild(inner);
+    bar.setAttribute('aria-hidden', 'true');
     document.body.appendChild(bar);
     state._askbarInput = input;
+    bindAskBarVisibility(bar);
+  }
+  function setAskBarVisible(bar, v) {
+    if (bar.classList.contains('govca-askbar-visible') === v) return;
+    bar.classList.toggle('govca-askbar-visible', v);
+    bar.setAttribute('aria-hidden', v ? 'false' : 'true');
+    document.body.classList.toggle('govca-askbar-on', v);
+  }
+  function bindAskBarVisibility(bar) {
+    var hero = $('ask-form');
+    // Fallback: hero pill missing or no IntersectionObserver -> keep the always-visible behavior.
+    if (!hero || !('IntersectionObserver' in window)) {
+      setAskBarVisible(bar, true);
+      return;
+    }
+    // The bar appears only once the hero search has scrolled out of view. Two
+    // observers give hysteresis: reveal when the pill sits ~80px past the top
+    // edge, hide again only when it comes back within ~10px, so the bar never
+    // flickers at the boundary. Adapts to any hero height (no pixel thresholds).
+    var ioShow = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) setAskBarVisible(bar, true);
+    }, { rootMargin: '80px 0px 0px 0px', threshold: 0 });
+    var ioHide = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) setAskBarVisible(bar, false);
+    }, { rootMargin: '10px 0px 0px 0px', threshold: 0 });
+    ioShow.observe(hero);
+    ioHide.observe(hero);
   }
   function syncAskBarLang() {
     if (state._askbarInput) {
