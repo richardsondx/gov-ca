@@ -6,14 +6,36 @@
 (function (root) {
   'use strict';
 
-  /* Only official Government of Canada hosts, https only. */
+  /* Only official Canadian government hosts, https only: federal plus
+   * provincial/territorial governments and their official licensing agencies
+   * (driver's licences, health cards and similar services are provincial). */
+  var PROVINCIAL_SUFFIXES = [
+    'ontario.ca', 'serviceontario.ca',
+    'quebec.ca', 'saaq.gouv.qc.ca',
+    'gov.bc.ca', 'icbc.com',
+    'alberta.ca', 'eservices.alberta.ca',
+    'saskatchewan.ca', 'sgi.sk.ca',
+    'manitoba.ca', 'gov.mb.ca', 'mpi.mb.ca',
+    'gnb.ca', 'www.snb.ca', 'snb.ca',
+    'novascotia.ca',
+    'princeedwardisland.ca',
+    'gov.nl.ca',
+    'yukon.ca',
+    'gov.nt.ca',
+    'gov.nu.ca'
+  ];
   function isAllowedUrl(url) {
     try {
       var u = new URL(url);
       if (u.protocol !== 'https:') return false;
       var host = u.hostname.toLowerCase();
-      return host === 'canada.ca' || host.slice(-10) === '.canada.ca' ||
-             host === 'gc.ca' || host.slice(-6) === '.gc.ca';
+      if (host === 'canada.ca' || host.slice(-10) === '.canada.ca' ||
+          host === 'gc.ca' || host.slice(-6) === '.gc.ca') return true;
+      for (var i = 0; i < PROVINCIAL_SUFFIXES.length; i++) {
+        var s = PROVINCIAL_SUFFIXES[i];
+        if (host === s || host.slice(-(s.length + 1)) === '.' + s) return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
@@ -39,7 +61,12 @@
     'Verifying you are human',
     'cf-challenge',
     'cf_chl',
-    'Ray ID'
+    'Ray ID',
+    // JS-shell pages: the proxy fetched the page but the real content never
+    // rendered. The curated summary is more useful than the shell chrome.
+    'needs JavaScript to function',
+    'Enable JavaScript',
+    'Please enable JavaScript'
   ];
   var SEARCH_TIMEOUT_MS = 8000;
   var READ_TIMEOUT_MS = 12000;
@@ -81,11 +108,16 @@
   function extractLinks(markdown, maxN) {
     var out = [];
     var seen = {};
+    // Page chrome is not a search result: skip in-page anchors, the canada.ca
+    // search page itself, and static assets. Without this, a JS-rendered
+    // search page yields only nav links and the curated fallback never runs.
+    var JUNK_RE = /#|\/srb\.html(\?|#|$)|\.(svg|png|jpe?g|gif|webp|css|js|ico|woff2?)(\?|#|$)/i;
     var re = /\[([^\]]{1,140})\]\((https:\/\/[^)\s]+)\)/g;
     var m;
     while ((m = re.exec(markdown)) !== null && out.length < (maxN || 6)) {
       var url = m[2].replace(/[.,;:!?)]+$/, '');
       if (!isAllowedUrl(url) || seen[url]) continue;
+      if (JUNK_RE.test(url)) continue;
       seen[url] = true;
       out.push({ title: m[1].trim(), url: url, summary: '' });
     }
@@ -123,17 +155,32 @@
   // deps: { fetchImpl, curatedSearch(query, lang) -> [records], lang }
   function searchCanadaCa(query, deps) {
     var lang = deps.lang || 'en';
+    var qwords = String(query || '').toLowerCase().split(/[^a-zàâäéèêëîïôöùûüç0-9]+/)
+      .filter(function (w) { return w.length > 2; });
     function fallback() {
       var records = [];
       try { records = deps.curatedSearch(query, lang) || []; } catch (e) { records = []; }
       return { results: curatedTriples(records, lang).slice(0, 5), live: false };
+    }
+    // Live results must actually match the query. The canada.ca search page is
+    // JS-rendered, so a reader proxy often returns only page chrome ("Jobs",
+    // "Skip to main content"). If no live link shares a word with the query,
+    // the live results are junk and the curated index is the better answer.
+    function relevant(links) {
+      return links.filter(function (l) {
+        var hay = ((l.title || '') + ' ' + (l.url || '')).toLowerCase();
+        for (var i = 0; i < qwords.length; i++) {
+          if (hay.indexOf(qwords[i]) !== -1) return true;
+        }
+        return false;
+      });
     }
     var url = jinaSearchUrl(query, lang);
     return fetchWithTimeout(deps.fetchImpl, url, SEARCH_TIMEOUT_MS).then(function (resp) {
       if (!resp.ok) return fallback();
       return resp.text().then(function (text) {
         if (!text || hasChallengeMarker(text)) return fallback();
-        var links = extractLinks(text, 6);
+        var links = relevant(extractLinks(text, 10)).slice(0, 6);
         if (!links.length) return fallback();
         return { results: links, live: true };
       });
@@ -193,6 +240,7 @@
     return 'You are gov.ca, an unofficial prototype and the front door to Canadian government services. The user came here for the answer, so you read the official pages FOR them and give the answer directly. Never tell the user to go read Canada.ca themselves or to "please visit" a Canada.ca section. That defeats the entire purpose of this site.\n' +
       'You have two tools: search_canada_ca (find official pages) and read_canada_ca_page (read a page\u2019s text).\n' +
       'Work plan: you have up to 4 tool rounds. Round 1: call search_canada_ca with a short query. Rounds 2-4: call read_canada_ca_page on the most relevant results (up to 4 pages total). If a search returns nothing useful, try another query with different keywords before moving on. Do not answer until you have searched and read, or exhausted all 4 rounds.\n' +
+      'Some services are provincial or territorial: driver\u2019s licence, health card, education, and most permits and professional licensing. If the user has not named a province or territory for one of these, ask which one in a single short question before using your tools, then search for that province\u2019s official page.\n' +
       'Rules:\n' +
       '- Answer in ' + outLang + '.\n' +
       '- Answer directly from what you read. Quote or paraphrase the official content, with every key fact backed by an inline markdown link like [page title](https://www.canada.ca/...).\n' +
@@ -223,7 +271,7 @@
     {
       type: 'function',
       name: 'search_canada_ca',
-      description: 'Search official Government of Canada pages for a query. Returns title/url/summary triples.',
+      description: 'Search official Canadian government pages (federal, provincial, and territorial) for a query. Returns title/url/summary triples.',
       parameters: {
         type: 'object',
         properties: {
@@ -236,7 +284,7 @@
     {
       type: 'function',
       name: 'read_canada_ca_page',
-      description: 'Read the text of one official Government of Canada page URL.',
+      description: 'Read the text of one official Canadian government page URL (federal, provincial, or territorial).',
       parameters: {
         type: 'object',
         properties: {

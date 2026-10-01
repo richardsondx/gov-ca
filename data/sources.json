@@ -834,5 +834,135 @@
     "title_fr": "Emplois dans la fonction publique fédérale",
     "url_en": "https://www.canada.ca/en/public-service-commission/jobs/services/gc-jobs.html",
     "url_fr": "https://www.canada.ca/fr/public-service-commission/jobs/services/gc-jobs.html"
+  },
+  {
+    "id": "drivers-licence-renew-on",
+    "keywords": "driver licence renew renewal permis conduire renouvellement ontario",
+    "title_en": "Renew a driver's licence (Ontario)",
+    "title_fr": "Renouveler un permis de conduire (Ontario)",
+    "url_en": "https://www.ontario.ca/page/renew-drivers-licence",
+    "url_fr": "https://www.ontario.ca/fr/page/renouveler-permis-de-conduire",
+    "summary_en": "Renew online or in person at a ServiceOntario centre. Ontario licences are valid 5 years and cost $90. Online renewal needs a full G, M or GM licence in good standing plus your licence number, the 7-digit trillium number on the back, and your postal code. The new card arrives by mail in 4 to 6 weeks; online renewals include a temporary validation document to carry with the old licence.",
+    "summary_fr": "Renouvelez en ligne ou en personne dans un centre ServiceOntario. Le permis ontarien est valide 5 ans et coûte 90 $. Le renouvellement en ligne exige un permis G, M ou GM complet en règle, votre numéro de permis, le numéro Trillium à 7 chiffres au dos du permis et votre code postal. La nouvelle carte arrive par la poste en 4 à 6 semaines; un document de validation temporaire accompagne les renouvellements en ligne."
+  },
+  {
+    "id": "drivers-licence-renew-bc",
+    "keywords": "driver licence renew renewal permis conduire renouvellement british columbia colombie-britannique icbc",
+    "title_en": "Renew your driver's licence (British Columbia)",
+    "title_fr": "Renouveler votre permis de conduire (Colombie-Britannique)",
+    "url_en": "https://www.icbc.com/driver-licensing/getting-licensed/Renew-your-licence-or-ID",
+    "url_fr": "https://www.icbc.com/driver-licensing/getting-licensed/Renew-your-licence-or-ID",
+    "summary_en": "Renew in person at any ICBC driver licensing office, up to 180 days before your licence expires. Bring two pieces of accepted ID. The same visit can renew a driver's licence or a BCID.",
+    "summary_fr": "Renouvelez en personne dans un bureau d'immatriculation de l'ICBC, jusqu'à 180 jours avant l'expiration. Apportez deux pièces d'identité acceptées. On peut y renouveler un permis de conduire ou une carte BCID."
+  },
+  {
+    "id": "drivers-licence-renew-ab",
+    "keywords": "driver licence renew renewal permis conduire renouvellement alberta",
+    "title_en": "Renew or replace a driver's licence (Alberta)",
+    "title_fr": "Renouveler ou remplacer un permis de conduire (Alberta)",
+    "url_en": "https://www.alberta.ca/renew-replace-drivers-licence",
+    "url_fr": "https://www.alberta.ca/renew-replace-drivers-licence",
+    "summary_en": "Renew in person at a registry agent; Alberta's online renewal site is currently disabled. You can renew up to 1 year before expiry. A 60-day interim licence is issued on the spot and the new card arrives by mail within 21 days. Drivers 75 and older, those with a medical condition code, or holders of Class 1, 2 or 4 licences must bring a completed medical form. If temporarily outside Alberta, renew by mail with the registry form.",
+    "summary_fr": "Renouvelez en personne chez un agent d'immatriculation; le site de renouvellement en ligne de l'Alberta est désactivé pour l'instant. Renouvellement possible jusqu'à 1 an avant l'expiration. Un permis provisoire de 60 jours est remis sur place et la nouvelle carte arrive par la poste en 21 jours. Les conducteurs de 75 ans et plus, ceux avec un code médical ou les titulaires des classes 1, 2 ou 4 doivent apporter un formulaire médical rempli. En déplacement hors de l'Alberta, renouvelez par la poste avec le formulaire du registraire."
+  },
+  {
+    "id": "drivers-licence-renew-sk",
+    "keywords": "driver licence renew renewal permis conduire renouvellement saskatchewan sgi",
+    "title_en": "Renew, replace or change your licence (Saskatchewan)",
+    "title_fr": "Renouveler, remplacer ou modifier votre permis (Saskatchewan)",
+    "url_en": "https://sgi.sk.ca/renew-licence",
+    "url_fr": "https://sgi.sk.ca/renew-licence",
+    "summary_en": "Saskatchewan driver's licences are valid 5 years and are renewed through SGI. A new photo is taken when you renew at the end of the term.",
+    "summary_fr": "Le permis de conduire de la Saskatchewan est valide 5 ans et se renouvelle auprès de la SGI. Une nouvelle photo est prise lors du renouvellement en fin de validité."
+  },
+  {
+    "id": "drivers-licence-renew-mb",
+    "keywords": "driver licence renew renewal permis conduire renouvellement manitoba mpi autopac",
+    "title_en": "Driver's licence renewal (Manitoba)",
+    "title_fr": "Renouvellement du permis de conduire (Manitoba)",
+    "url_en": "https://apps.mpi.mb.ca/comms/drivershandbook/renewal-process.html",
+    "url_fr": "https://apps.mpi.mb.ca/comms/drivershandbook/renewal-process.html",
+    "summary_en": "Visit an Autopac agent once every 5 years to renew; a renewal notice is mailed every 5 years. You still pay for your licence every year: in non-renewal years you get an annual statement of account instead. Pay online at mpi.mb.ca by VISA or Mastercard, online or by phone through your bank, or in person wherever Autopac is sold (cash, cheque, debit, VISA, Mastercard).",
+    "summary_fr": "Présentez-vous chez un agent Autopac tous les 5 ans pour renouveler; un avis de renouvellement est posté tous les 5 ans. Le paiement reste annuel : les autres années, vous recevez un relevé de compte annuel. Payez en ligne à mpi.mb.ca par VISA ou Mastercard, en ligne ou par téléphone via votre banque, ou en personne chez tout agent Autopac (comptant, chèque, débit, VISA, Mastercard)."
+  },
+  {
+    "id": "drivers-licence-renew-nb",
+    "keywords": "driver licence renew renewal permis conduire renouvellement new brunswick nouveau-brunswick",
+    "title_en": "Driver's licences (New Brunswick)",
+    "title_fr": "Permis de conduire (Nouveau-Brunswick)",
+    "url_en": "https://www.gnb.ca/en/topic/driving-transportation/driving-licensing/driver-licences.html",
+    "url_fr": "https://www.gnb.ca/fr/sujet/conduite-transports/permis-conduire/permis-conduire.html",
+    "summary_en": "Renew online, by phone through TeleServices at 1-888-762-8600, or at a Service New Brunswick centre. A temporary licence can be retrieved online after renewing. Most licences are valid 4 years and cost $100 per renewal ($50 for a 2-year term, fees as of August 1, 2026).",
+    "summary_fr": "Renouvelez en ligne, par téléphone via TéléServices au 1-888-762-8600, ou dans un centre Service Nouveau-Brunswick. Un permis temporaire peut être récupéré en ligne après le renouvellement. La plupart des permis sont valides 4 ans et coûtent 100 $ par renouvellement (50 $ pour 2 ans, tarifs en vigueur depuis le 1er août 2026)."
+  },
+  {
+    "id": "drivers-licence-renew-ns",
+    "keywords": "driver licence renew renewal permis conduire renouvellement nova scotia nouvelle-ecosse",
+    "title_en": "Renew your driver's licence online, classes 5, 6 and 8 (Nova Scotia)",
+    "title_fr": "Renouveler votre permis de conduire en ligne, classes 5, 6 et 8 (Nouvelle-Écosse)",
+    "url_en": "https://novascotia.ca/renew-your-drivers-licence-online-class-5-6-and-8/",
+    "url_fr": "https://novascotia.ca/renew-your-drivers-licence-online-class-5-6-and-8/fr/",
+    "summary_en": "Class 5, 6 and 8 licences can be renewed online with no in-person visit, anytime in the 6 months before expiry. Eligibility: licence expired less than 5 years, last renewal was in person, no address change in the last 3 months, no outstanding fines. No new photo is needed. Fees: class 5 $80.15, class 6 $80.15, class 8 $73.75. Keep the renewal confirmation with your old licence until the new card arrives by mail (about 2 weeks).",
+    "summary_fr": "Les permis des classes 5, 6 et 8 se renouvellent en ligne sans visite en personne, jusqu'à 6 mois avant l'expiration. Conditions : permis expiré depuis moins de 5 ans, dernier renouvellement en personne, aucun changement d'adresse depuis 3 mois, aucune amende impayée. Aucune nouvelle photo requise. Tarifs : classe 5 80,15 $, classe 6 80,15 $, classe 8 73,75 $. Gardez la confirmation et l'ancien permis jusqu'à l'arrivée de la nouvelle carte par la poste (environ 2 semaines)."
+  },
+  {
+    "id": "drivers-licence-renew-nl",
+    "keywords": "driver licence renew renewal permis conduire renouvellement newfoundland labrador terre-neuve",
+    "title_en": "Renew a driver's licence (Newfoundland and Labrador)",
+    "title_fr": "Renouveler un permis de conduire (Terre-Neuve-et-Labrador)",
+    "url_en": "https://www.gov.nl.ca/motorregistration/renew-drivers-licence/",
+    "url_fr": "https://www.gov.nl.ca/motorregistration/renew-drivers-licence/",
+    "summary_en": "Renew online through MyGovNL. All outstanding fines and tickets must be paid first. Licence expired less than 5 years: renew without tests after a questionnaire (a medical may be required by age, class or condition). Expired 5 to 10 years: written, vision and road tests are required. Expired more than 10 years: you must re-enter the Graduated Driver Licensing Program.",
+    "summary_fr": "Renouvelez en ligne via MyGovNL. Toutes les amendes et contraventions impayées doivent d'abord être réglées. Permis expiré depuis moins de 5 ans : renouvellement sans examen après un questionnaire (un examen médical peut être exigé selon l'âge, la classe ou l'état de santé). Expiré depuis 5 à 10 ans : examens théorique, visuel et pratique requis. Expiré depuis plus de 10 ans : retour obligatoire au programme de permis gradué."
+  },
+  {
+    "id": "drivers-licence-renew-nt",
+    "keywords": "driver licence renew renewal permis conduire renouvellement northwest territories territoires nord-ouest",
+    "title_en": "Renew or replace a driver's licence (Northwest Territories)",
+    "title_fr": "Renouveler ou remplacer un permis de conduire (Territoires du Nord-Ouest)",
+    "url_en": "https://www.idmv.inf.gov.nt.ca/Drivers/Drivers/Renew-or-replace-a-drivers-licence",
+    "url_fr": "https://www.idmv.inf.gov.nt.ca/Drivers/Drivers/Renew-or-replace-a-drivers-licence",
+    "summary_en": "Renew online or in person at a driver and vehicle office with your existing licence. Terms of 1, 3 or 5 years depending on class, age or medical status; a 5-year licence costs $110 ($54 for seniors 60+). Licence expired more than 2 years: follow the new-licence process.",
+    "summary_fr": "Renouvelez en ligne ou en personne dans un bureau des conducteurs et véhicules avec votre permis actuel. Validité de 1, 3 ou 5 ans selon la classe, l'âge ou l'état de santé; le permis de 5 ans coûte 110 $ (54 $ pour les 60 ans et plus). Permis expiré depuis plus de 2 ans : suivez la procédure d'un nouveau permis."
+  },
+  {
+    "id": "drivers-licence-renew-qc",
+    "keywords": "driver licence renew renewal permis conduire renouvellement quebec saaq",
+    "title_en": "Renewing and Paying Your Driver's Licence (Quebec)",
+    "title_fr": "Renouveler et payer votre permis de conduire (Québec)",
+    "url_en": "https://saaq.gouv.qc.ca/en/drivers-licences/renewing-drivers-licence",
+    "url_fr": "https://saaq.gouv.qc.ca/en/drivers-licences/renewing-drivers-licence",
+    "summary_en": "Quebec uses an annual fee-payment model, not periodic card renewal: a payment notice is mailed each year before your birthday, and the deadline is your birthday. Pay through SAAQclic, your bank, pre-authorized debit, or cheque. The notice covers the driving-privilege fee, the insurance contribution based on your record, and admin fees; a late payment costs at least $13.50. When the plastic card expires, the SAAQ reuses your photo on file, so no office visit is needed. Unpaid for 3 or more years: you must retake the knowledge and road tests. Driving without a valid licence means a $300 to $600 fine, and the vehicle can be impounded for 30 days.",
+    "summary_fr": "Le Québec utilise un modèle de paiement annuel plutôt qu'un renouvellement périodique de la carte : un avis de paiement est posté chaque année avant votre anniversaire, et l'échéance est votre date d'anniversaire. Payez via SAAQclic, votre banque, prélèvement automatique ou chèque. L'avis comprend le droit de conduire, la contribution d'assurance selon votre dossier et des frais administratifs; un paiement en retard coûte au moins 13,50 $. À l'expiration de la carte plastifiée, la SAAQ réutilise votre photo au dossier, sans visite en succursale. Impayé depuis 3 ans ou plus : examens théorique et pratique à repasser. Conduire sans permis valide : amende de 300 $ à 600 $, et le véhicule peut être mis en fourrière 30 jours."
+  },
+  {
+    "id": "drivers-licence-renew-pei",
+    "keywords": "driver licence renew renewal permis conduire renouvellement prince edward island ile-du-prince-edouard",
+    "title_en": "Renew your Driver's License Online (Prince Edward Island)",
+    "title_fr": "Renouveler votre permis de conduire en ligne (Île-du-Prince-Édouard)",
+    "url_en": "https://www.princeedwardisland.ca/en/service/renew-your-drivers-license-online",
+    "url_fr": "https://www.princeedwardisland.ca/en/service/renew-your-drivers-license-online",
+    "summary_en": "Renew online or in person at any Access PEI location. PEI licences are valid 5 years and cost $116; renew up to 5 months before expiry. Online renewal needs: age 17 or older, a valid class 1, 2, 3, 4, 5, 6 or 8 licence, no name or address change, and no unpaid fines, suspension or cancellation. A temporary document valid 60 days is mailed after an online renewal; the new card (same photo) arrives by mail within 30 business days. Destroy the old card when the new one arrives.",
+    "summary_fr": "Renouvelez en ligne ou en personne dans un centre Accès Î.-P.-É. Le permis est valide 5 ans et coûte 116 $; renouvellement possible jusqu'à 5 mois avant l'expiration. Le renouvellement en ligne exige : 17 ans ou plus, un permis valide des classes 1, 2, 3, 4, 5, 6 ou 8, aucun changement de nom ou d'adresse, et aucune amende impayée, suspension ou annulation. Un document temporaire valide 60 jours est posté après un renouvellement en ligne; la nouvelle carte (même photo) arrive par la poste en 30 jours ouvrables. Détruisez l'ancienne carte à la réception de la nouvelle."
+  },
+  {
+    "id": "drivers-licence-renew-yt",
+    "keywords": "driver licence renew renewal permis conduire renouvellement yukon",
+    "title_en": "Renew your driver's licence (Yukon)",
+    "title_fr": "Renouveler votre permis de conduire (Yukon)",
+    "url_en": "https://yukon.ca/en/driving-and-transportation/driver-licensing/renew-your-drivers-licence",
+    "url_fr": "https://yukon.ca/en/driving-and-transportation/driver-licensing/renew-your-drivers-licence",
+    "summary_en": "Renew in person at a Motor Vehicles office with the completed renewal form. Yukon licences are valid 5 years and cost $100; renew up to 6 months before expiry or within 2 years after. Bring your old licence and one document proving Yukon residency (a vision test is given if you wear corrective lenses). A 90-day temporary licence is issued on the spot; the new card is mailed and takes up to 4 weeks.",
+    "summary_fr": "Renouvelez en personne dans un bureau des véhicules automobiles avec le formulaire rempli. Le permis du Yukon est valide 5 ans et coûte 100 $; renouvellement jusqu'à 6 mois avant l'expiration ou dans les 2 ans suivants. Apportez votre ancien permis et un document prouvant votre résidence au Yukon (test de vision si vous portez des verres correcteurs). Un permis temporaire de 90 jours est remis sur place; la nouvelle carte est postée en jusqu'à 4 semaines."
+  },
+  {
+    "id": "drivers-licence-renew-nu",
+    "keywords": "driver licence renew renewal permis conduire renouvellement nunavut",
+    "title_en": "Driver's Licence Renewals (Nunavut)",
+    "title_fr": "Renouvellement du permis de conduire (Nunavut)",
+    "url_en": "https://www.gov.nu.ca/en/service-nunavut/drivers-licence-renewals",
+    "url_fr": "https://www.gov.nu.ca/en/service-nunavut/drivers-licence-renewals",
+    "summary_en": "Renew online or in person at any Motor Vehicle office. Nunavut licences are valid 5 years and can be renewed within 90 days of expiry. Online renewal is available unless your licence is cancelled, suspended, or expired more than 12 months; then apply in person, and a driver examination is required. The page states no renewal fee. Help line: 1-888-975-5999.",
+    "summary_fr": "Renouvelez en ligne ou en personne dans un bureau des véhicules automobiles. Le permis du Nunavut est valide 5 ans et peut être renouvelé dans les 90 jours suivant l'expiration. Le renouvellement en ligne est possible sauf si le permis est annulé, suspendu ou expiré depuis plus de 12 mois; alors présentez-vous en personne, et un examen de conduite est exigé. La page n'indique aucun tarif. Aide : 1-888-975-5999."
   }
 ]
